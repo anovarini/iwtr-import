@@ -47,7 +47,7 @@ private void startImport(Repository repository, OptionAccessor options) {
     repository.init()
 
     options.arguments().each {
-        repository.importFrom(new File(it))
+        repository.importProject(new File(it))
     }
 }
 

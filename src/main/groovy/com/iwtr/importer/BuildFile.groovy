@@ -19,47 +19,29 @@
 
 package com.iwtr.importer
 
-import com.tinkerpop.blueprints.pgm.impls.neo4j.Neo4jGraph
-import com.tinkerpop.blueprints.pgm.Vertex
-
 class BuildFile {
 
     File buildFile
+    def buildName
+    def dependencies
 
     BuildFile(File buildFile) {
         this.buildFile = buildFile
     }
 
-    void storeInto(Neo4jGraph graph) {
+    public void analyse() {
         def slurpedBuildFile = new XmlSlurper().parse buildFile
-        def buildName = slurpedBuildFile.info.@module.text()
+        buildName = slurpedBuildFile.info.@module.text()
+        dependencies = slurpedBuildFile.dependencies.dependency.collect { it.@name.text() }
+    }
 
-        Vertex buildNode = lookup buildName, graph
+    void storeInto(def repository) {
+        def buildNode = repository.lookup buildName
 
-        def dependencies = slurpedBuildFile.dependencies.dependency.collect { it.@name.text() }
         dependencies.each {
             name ->
-            def dependencyNode = lookup name, graph
-            connect(buildNode, dependencyNode, graph)
-        }
-    }
-
-    Vertex lookup(def buildFileName, def graph) {
-        def storedModule = graph.V.filter { it.name == buildFileName }
-
-        if (!storedModule.hasNext()) {
-            storedModule = graph.addVertex([name: (buildFileName)])
-            return storedModule
-        }
-        storedModule.next()
-    }
-
-    void connect(Vertex storedModule, Vertex storedDependency, def graph) {
-        def storedLink = storedModule.out.filter {
-            it.name == storedDependency.name
-        }
-        if (!storedLink.hasNext()) {
-            graph.addEdge null, storedModule, storedDependency, 'depends_on'
+            def dependencyNode = repository.lookup name
+            repository.connect(buildNode, dependencyNode)
         }
     }
 }

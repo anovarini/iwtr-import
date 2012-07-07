@@ -35,7 +35,7 @@ class Repository {
         this.location = location
     }
 
-    void importFrom(File location) {
+    void importProject(File location) {
         def ivyFile = ~/ivy.xml/
 
         def scan
@@ -44,11 +44,31 @@ class Repository {
             it.eachDir scan
             it.eachFileMatch(ivyFile) {
                 BuildFile buildFile = new BuildFile(it)
-                buildFile.storeInto(graph)
+                buildFile.analyse()
+                buildFile.storeInto(this)
             }
         }
 
         scan location
+    }
+
+    def lookup(def buildFileName) {
+        def storedModule = graph.V.filter { it.name == buildFileName }
+
+        if (!storedModule.hasNext()) {
+            storedModule = graph.addVertex([name: (buildFileName)])
+            return storedModule
+        }
+        storedModule.next()
+    }
+
+    void connect(def storedModule, def storedDependency) {
+        def storedLink = storedModule.out.filter {
+            it.name == storedDependency.name
+        }
+        if (!storedLink.hasNext()) {
+            graph.addEdge null, storedModule, storedDependency, 'depends_on'
+        }
     }
 
     void init() {
