@@ -33,4 +33,6 @@ Future enhancements
 .. User can change the repository location
 .. User can reset the database before importing the projects
 .. User can choose the type of the build files. Currently only ivy type is supported, but
-   there are plans to support maven type.
+   there are plans to support maven type
+.. Testing? Probably not much unit tests but most likely some integration tests for
+   avoiding regressions
