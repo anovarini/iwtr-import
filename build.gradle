@@ -48,4 +48,4 @@ task wrapper(type: Wrapper) {
     gradleVersion = '1.0'
 }
 
-mainClassName = "com.iwtr.import.Main"
+mainClassName = "com.iwtr.importer.Main"
