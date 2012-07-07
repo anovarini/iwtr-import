@@ -25,7 +25,7 @@ How to make it work
     cd build\install\iwtr-import    
     bin\iwtr-import    
 4. Follow the instructions
-5. The command won't give you any feedback if everything will work as expected.
+5. The command won't give you any feedback if everything works as expected.
 
 Future enhancements 
 -------------------
