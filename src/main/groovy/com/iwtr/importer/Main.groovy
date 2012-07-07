@@ -19,18 +19,43 @@
 
 package com.iwtr.importer
 
-def cli = new CliBuilder(usage:'iwtr-import project1 project2...')
+def cli = new CliBuilder(usage: 'iwtr-import <project location> ...')
 
 def options = cli.parse(args)
 
+
 if (options.arguments()) {
-
-    new com.iwtr.importer.Importer()
-
-    options.arguments().each {
-
-    }
+    startImport(options)
 }
 else {
     cli.usage()
+}
+
+private void startImport(OptionAccessor options) {
+    File repositoryLocation = defaultRepositoryLocation()
+    def repository = new Repository(repositoryLocation)
+
+    try {
+        startImport(repository, options)
+    }
+    finally {
+        repository.close()
+    }
+}
+
+private void startImport(Repository repository, OptionAccessor options) {
+    repository.init()
+
+    options.arguments().each {
+        repository.importFrom(new File(it))
+    }
+}
+
+private File defaultRepositoryLocation() {
+    String homeDir = System.getProperty("user.home")
+    def defaultRepositoryLocation = new File("$homeDir/.iwtr")
+    if (!defaultRepositoryLocation.exists()) {
+        defaultRepositoryLocation.mkdir()
+    }
+    defaultRepositoryLocation
 }
