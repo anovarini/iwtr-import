@@ -19,43 +19,66 @@
 
 package com.iwtr.importer
 
-def cli = new CliBuilder(usage: 'iwtr-import <project location> ...')
+def cli = new CliBuilder(usage: 'iwtr-import [options] <project-location ...>', header: 'Options:')
+cli._(longOpt: 'help', 'Print this help')
+cli._(longOpt: 'repository', args: 1, argName: 'location', 'Use a custom repository location (default ${user.home}/.iwtr)')
+cli._(longOpt: 'clean-repository', 'Clean the repository before starting the import')
+
 
 def options = cli.parse(args)
 
-
 if (options.arguments()) {
-    startImport(options)
-}
-else {
+    Repository repository = setupRepository customRepositoryLocationOrDefault(options), options.'clean-repository' as boolean
+    doImport options.arguments(), repository
+} else {
     cli.usage()
 }
 
-private void startImport(OptionAccessor options) {
-    File repositoryLocation = defaultRepositoryLocation()
-    def repository = new Repository(repositoryLocation)
+private String customRepositoryLocationOrDefault(OptionAccessor options) {
+    String homeDir = System.getProperty("user.home");
+    options.repository ?: "$homeDir/.iwtr"
+}
 
+private void doImport(final def locations, final Repository repository) {
     try {
-        startImport(repository, options)
-    }
-    finally {
+        tryImport locations, repository
+    } finally {
         repository.close()
     }
 }
 
-private void startImport(Repository repository, OptionAccessor options) {
+private void tryImport(final def projectLocations, final Repository repository) {
     repository.init()
+    projectLocations.each {repository.importProject new File(it as String) }
+}
 
-    options.arguments().each {
-        repository.importProject(new File(it))
+private Repository setupRepository(String repositoryLocation, boolean cleanRepoRequested) {
+    new Repository(prepareRepositoryLocation(repositoryLocation, cleanRepoRequested))
+}
+
+private File prepareRepositoryLocation(String repositoryLocation, boolean cleanRepoRequested) {
+    final File location = new File(repositoryLocation)
+    if (!location.exists()) {
+        location.mkdir()
+    } else {
+        deleteRepositoryContentIfRequested(location, cleanRepoRequested)
+    }
+    location
+}
+
+private void deleteRepositoryContentIfRequested(File location, boolean cleanRepoRequested) {
+    if (cleanRepoRequested) {
+        deleteRepositoryContent(location)
     }
 }
 
-private File defaultRepositoryLocation() {
-    String homeDir = System.getProperty("user.home")
-    def defaultRepositoryLocation = new File("$homeDir/.iwtr")
-    if (!defaultRepositoryLocation.exists()) {
-        defaultRepositoryLocation.mkdir()
+private void deleteRepositoryContent(File location) {
+    def scan
+    scan = {
+        File aFile = it
+        aFile.eachDir scan
+        aFile.eachFile { it.delete() }
+        if (!aFile.equals(location)) aFile.delete()
     }
-    defaultRepositoryLocation
+    scan location
 }

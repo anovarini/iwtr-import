@@ -19,7 +19,7 @@
 
 package com.iwtr.importer
 
-import com.tinkerpop.blueprints.pgm.impls.neo4j.Neo4jGraph
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph
 import com.tinkerpop.gremlin.groovy.Gremlin
 
 class Repository {
@@ -39,7 +39,6 @@ class Repository {
         def ivyFile = ~/ivy.xml/
 
         def scan
-
         scan = {
             it.eachDir scan
             it.eachFileMatch(ivyFile) {
@@ -76,6 +75,7 @@ class Repository {
     }
 
     void close() {
-        graph.shutdown()
+        if (graph)
+            graph.shutdown()
     }
 }
